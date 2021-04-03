@@ -1,0 +1,10 @@
+{
+  "name": "psvm-ps",
+  "version": "0.1.0",
+  "description": "PureScript version management in PureScript.",
+  "main": "index.js",
+  "repository": "https://github.com/PureFunctor/psvm-ps.git",
+  "author": "PureFunctor <purefunctor@gmail.com>",
+  "license": "BSD-3-License",
+  "private": false
+}
