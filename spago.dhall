@@ -9,6 +9,7 @@
   , "node-path"
   , "node-process"
   , "psci-support"
+  , "string-parsers"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs" ]

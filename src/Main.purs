@@ -6,21 +6,21 @@ import ArgParse.Basic (ArgParser, anyNotFlag, boolean, choose, command, flag, fl
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
+import Data.Maybe (Maybe)
 import Data.Show.Generic (genericShow)
 import Effect (Effect)
 import Effect.Console as Console
 import Node.Process as Process
 import Psvm.Ls as Ls
+import Psvm.Version (Version)
+import Psvm.Version as Version
 
 {-----------------------------------------------------------------------}
 
-type Version = String
-
-
 data Command
-  = Install Version
-  | Uninstall Version
-  | Use Version
+  = Install (Maybe Version)
+  | Uninstall (Maybe Version)
+  | Use (Maybe Version)
   | Ls { remote :: Boolean }
 
 derive instance genericCommand :: Generic Command _
@@ -34,15 +34,15 @@ commandParser =
   choose "command"
   [ command [ "install" ] "Install a PureScript version." $
       flagHelp *> anyNotFlag "VERSION" "version to install"
-        <#> Install
+        <#> Install <<< Version.fromString
 
   , command [ "uninstall" ] "Uninstall a PureScript version." $
       flagHelp *> anyNotFlag "VERSION" "version to uninstall"
-        <#> Uninstall
+        <#> Uninstall <<< Version.fromString
 
   , command [ "use" ] "Use a PureScript version." $
       flagHelp *> anyNotFlag "VERSION" "version to use"
-        <#> Use
+        <#> Use <<< Version.fromString
 
   , command [ "ls" ] "List PureScript versions." $
       flagHelp *>
