@@ -9,6 +9,7 @@ import Data.Traversable (for_, traverse)
 import Effect (Effect)
 import Effect.Console as Console
 import Node.Process as Process
+import Psvm.Files (PsvmFolder, listPurs)
 import Psvm.Shell (spawn)
 
 
@@ -59,5 +60,11 @@ printRemote = do
     Console.log ( "    " <> (unwrap version).tagName )
 
 
-printLocal :: Effect Unit
-printLocal = Console.log "TODO"
+printLocal :: PsvmFolder -> Effect Unit
+printLocal psvm = do
+  versions <- listPurs psvm
+
+  Console.log "Available PureScript Versions:"
+
+  for_ versions \version ->
+    Console.log ( "    " <> version )

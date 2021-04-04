@@ -6,7 +6,7 @@ import ArgParse.Basic (ArgParser, anyNotFlag, boolean, choose, command, flag, fl
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..))
 import Data.Show.Generic (genericShow)
 import Effect (Effect)
 import Effect.Console as Console
@@ -59,17 +59,25 @@ perform argv =
     Left e ->
       Console.log $ printArgError e
 
-    Right c ->
-      performCommand c
+    Right c -> do
+      mHome <- Process.lookupEnv "HOME"
 
+      case mHome of
+        Nothing -> do
+          Console.error "Fatal: unset HOME"
+          Process.exit 1
+        Just home -> do
+          let psvm = getPsvmFolder home
+          performCommand psvm c
   where
-    performCommand = case _ of
-      Ls { remote }
-        | remote    -> Ls.printRemote
-        | otherwise -> Ls.printLocal
+    performCommand psvm =
+      case _ of
+        Ls { remote }
+          | remote    -> Ls.printRemote
+          | otherwise -> Ls.printLocal psvm
 
-      c ->
-        Console.logShow c *> Process.exit 0
+        c ->
+          Console.logShow c *> Process.exit 0
 
 
 parser :: ArgParser Command

@@ -2,10 +2,18 @@ module Psvm.Files where
 
 import Prelude
 
+import Data.Array as Array
+import Data.Either (hush)
+import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Node.Path (FilePath)
 import Node.Path as Path
 import Psvm.Shell (spawn)
+import Psvm.Version (Version)
+import Psvm.Version as Version
+import Text.Parsing.StringParser (runParser)
+import Text.Parsing.StringParser.CodeUnits (char, eof, regex)
+import Text.Parsing.StringParser.Combinators (manyTill)
 
 
 type PsvmFolder =
@@ -26,47 +34,75 @@ getPsvmFolder base =
     }
 
 
-getDownloadUrl :: String -> String
+getDownloadUrl :: Version -> String
 getDownloadUrl version =
   "https://github.com/purescript/purescript/releases/download/"
-    <> version <> "/linux64.tar.gz"
+    <> show version <> "/linux64.tar.gz"
 
 
--- | Todo: Version Checks, use Node
-downloadPurs :: PsvmFolder -> String -> Effect Unit
-downloadPurs folder version = do
-  void $ spawn "mkdir"
-    [ "-p", Path.concat [ folder.archives, version ]
-    ]
+mkdir :: FilePath -> Effect Unit
+mkdir path = do
+  void $ spawn "mkdir" [ "-p", path ]
 
+
+downloadPurs :: PsvmFolder -> Version -> Effect Unit
+downloadPurs psvm version = do
+  mkdir psvm.archives
   void $ spawn "curl"
     [ "-L", getDownloadUrl version
-    , "-o", Path.concat [ folder.archives, version <> ".tar.gz" ]
+    , "-o", Path.concat [ psvm.archives, Version.toString version <> ".tar.gz" ]
     ]
 
 
--- | Todo: Version Checks, use Node
-unpackPurs :: PsvmFolder -> String -> Effect Unit
-unpackPurs folder version = do
-  void $ spawn "mkdir"
-    [ "-p", Path.concat [ folder.versions, version ]
-    ]
+unpackPurs :: PsvmFolder -> Version -> Effect Unit
+unpackPurs psvm version = do
+  let version' = Version.toString version
+
+  mkdir $ Path.concat [ psvm.versions, version' ]
 
   void $ spawn "tar"
-    [ "-xvf", Path.concat [ folder.archives, version <> ".tar.gz" ]
-    , "-C", Path.concat [ folder.versions, version ]
+    [ "-xvf", Path.concat [ psvm.archives, version' <> ".tar.gz" ]
+    , "-C", Path.concat [ psvm.versions, version' ]
     ]
 
 
--- | Todo: Version Checks, use Node
-selectPurs :: PsvmFolder -> String -> Effect Unit
-selectPurs folder version = do
-  void $ spawn "mkdir"
-    [ "-p", Path.concat [ folder.current, "bin" ]
-    ]
+selectPurs :: PsvmFolder -> Version -> Effect Unit
+selectPurs psvm version = do
+  mkdir psvm.versions
 
   void $ spawn "cp"
     [ "-f"
-    , Path.concat [ folder.versions, version, "purescript", "purs" ]
-    , Path.concat [ folder.current, "bin" ]
+    , Path.concat [ psvm.versions, Version.toString version, "purescript", "purs" ]
+    , Path.concat [ psvm.current, "bin" ]
     ]
+
+
+removePurs :: PsvmFolder -> Version -> Effect Unit
+removePurs psvm version = do
+  void $ spawn "rm"
+    [ "-r",  Path.concat [ psvm.versions, Version.toString version ]
+    ]
+
+
+
+cleanPurs :: PsvmFolder -> Effect Unit
+cleanPurs psvm = do
+  void $ spawn "rm"
+    [ "-r", Path.concat [ psvm.archives, "**" ]
+    ]
+
+
+listPurs :: PsvmFolder -> Effect ( Array String )
+listPurs psvm = do
+  mkdir psvm.versions
+
+  let split = manyTill ( regex ".+" <* char '\n' ) eof
+
+  mVersions <- hush <<< runParser split <$>
+    spawn "ls" [ "-1", "-X", psvm.versions ]
+
+  case mVersions of
+    Nothing ->
+      pure [ ]
+    Just versions ->
+      pure $ Array.fromFoldable versions
