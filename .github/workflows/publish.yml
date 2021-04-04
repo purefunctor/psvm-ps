@@ -1,0 +1,33 @@
+name: Publish Package
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Setup Node
+      uses: actions/setup-node@v2
+      with:
+        node-version: '15.x'
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Setup PureScript
+      uses: purescript-contrib/setup-purescript@main
+      with:
+        purescript: "0.14.0"
+        spago: "0.19.1"
+        zephyr: "0.3.2"
+
+    - name: Install Dependencies
+      run: yarn
+
+    - name: Publish Package
+      run: yarn publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
