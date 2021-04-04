@@ -5,7 +5,7 @@ import Prelude
 import Data.Argonaut.Decode (class DecodeJson, decodeJson, parseJson, (.:))
 import Data.Either (Either(..))
 import Data.Newtype (class Newtype, unwrap)
-import Data.Traversable (traverse)
+import Data.Traversable (for_, traverse)
 import Effect (Effect)
 import Effect.Console as Console
 import Node.Process as Process
@@ -37,8 +37,7 @@ instance decodeJsonRleaseJson :: DecodeJson ReleaseJson where
 
 getReleases :: Effect ( Array ReleaseJson )
 getReleases = do
-  result <- spawn "curl" [ releaseUrl ]
-
+  result <- spawn "curl" [ "-s", releaseUrl ]
   case parseJson result >>= decodeJson of
     Left err ->
       Console.errorShow err *> Process.exit 1
@@ -46,5 +45,19 @@ getReleases = do
       pure releases
 
 
-listVersions :: Effect ( Array String  )
-listVersions = getReleases >>= traverse (pure <<< _.tagName <<< unwrap)
+listRemote :: Effect ( Array String  )
+listRemote = getReleases >>= traverse (pure <<< _.tagName <<< unwrap)
+
+
+printRemote :: Effect Unit
+printRemote = do
+  versions <- getReleases
+
+  Console.log "Available PureScript Versions:"
+
+  for_ versions \version ->
+    Console.log ( "    " <> (unwrap version).tagName )
+
+
+printLocal :: Effect Unit
+printLocal = Console.log "TODO"

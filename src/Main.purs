@@ -2,47 +2,97 @@ module Main where
 
 import Prelude
 
-import Control.Monad.Rec.Class (Step(..), tailRecM)
+import ArgParse.Basic (ArgParser, anyNotFlag, boolean, choose, command, flag, flagHelp, flagInfo, parseArgs, printArgError)
 import Data.Array as Array
-import Data.Maybe (Maybe(..))
+import Data.Either (Either(..))
+import Data.Generic.Rep (class Generic)
+import Data.Show.Generic (genericShow)
 import Effect (Effect)
 import Effect.Console as Console
 import Node.Process as Process
-import Psvm.Cli.Global as Global
-import Psvm.Cli.Install as Install
-import Psvm.Cli.Local as Local
-import Psvm.Cli.Ls as Ls
-import Psvm.Cli.Rm as Rm
+import Psvm.Ls as Ls
 
+{-----------------------------------------------------------------------}
+
+type Version = String
+
+
+data Command
+  = Install Version
+  | Uninstall Version
+  | Use Version
+  | Ls { remote :: Boolean }
+
+derive instance genericCommand :: Generic Command _
+
+instance showCommand :: Show Command where
+  show = genericShow
+
+
+commandParser :: ArgParser Command
+commandParser =
+  choose "command"
+  [ command [ "install" ] "Install a PureScript version." $
+      flagHelp *> anyNotFlag "VERSION" "version to install"
+        <#> Install
+
+  , command [ "uninstall" ] "Uninstall a PureScript version." $
+      flagHelp *> anyNotFlag "VERSION" "version to uninstall"
+        <#> Uninstall
+
+  , command [ "use" ] "Use a PureScript version." $
+      flagHelp *> anyNotFlag "VERSION" "version to use"
+        <#> Use
+
+  , command [ "ls" ] "List PureScript versions." $
+      flagHelp *>
+        ( flag [ "-r", "--remote" ] "List remote versions?" # boolean )
+          <#> \remote -> Ls { remote }
+  ]
+
+{-----------------------------------------------------------------------}
 
 perform :: Array String -> Effect Unit
-perform = tailRecM go
+perform argv =
+  case parseArgs name about parser argv of
+
+    Left e ->
+      Console.log $ printArgError e
+
+    Right c ->
+      performCommand c
+
   where
-    go argv = case Array.uncons argv of
-      Just { head, tail }
-        | head == "-h" || head == "--help" ->
-          Console.log usage *> Process.exit 0
+    performCommand = case _ of
+      Ls { remote }
+        | remote    -> Ls.printRemote
+        | otherwise -> Ls.printLocal
 
-        | head == "-v" || head == "--version" -> do
-          Console.log version *> Process.exit 0
+      c ->
+        Console.logShow c *> Process.exit 0
 
-        | head == "install" ->
-          Done <$> Install.perform tail
 
-        | head == "rm" ->
-          Done <$> Rm.perform tail
+parser :: ArgParser Command
+parser =
+  flagHelp *> versionFlag *> commandParser
 
-        | head == "global" ->
-          Done <$> Global.perform tail
+  where
+    versionFlag =
+      flagInfo [ "-v", "--versions" ]
+        "Show the installed psvm-ps version." version
 
-        | head == "local" ->
-          Done <$> Local.perform tail
+{-----------------------------------------------------------------------}
 
-        | head == "ls" ->
-          Done <$> Ls.perform tail
+name :: String
+name = "psvm-ps"
 
-      _ ->
-        Console.log usage *> Process.exit 1
+
+version :: String
+version = "psvm-ps - v0.1.0"
+
+
+about :: String
+about = "PureScript version management in PureScript."
 
 
 main :: Effect Unit
@@ -50,22 +100,3 @@ main = do
   cwd <- Process.cwd
   argv <- Array.drop 2 <$> Process.argv
   perform argv
-
-
-version :: String
-version = "psvm-ps - v0.1.0"
-
-
-usage :: String
-usage = """psvm-ps - PureScript version management in PureScript.
-
-Usage: psvm [-h | --help] [-v | --version]
-       (install | rm | global | local | ls)
-
-Available Commands:
-  install           Install a PureScript version.
-  rm                Remove a PureScript version
-  global            Set a global PureScript version.
-  local             Set a local PureScript version.
-  ls                List PureScript versions.
-"""
