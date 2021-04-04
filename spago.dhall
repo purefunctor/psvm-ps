@@ -1,6 +1,7 @@
 { name = "psvm-ps"
 , dependencies =
-  [ "console"
+  [ "argonaut-codecs"
+  , "console"
   , "effect"
   , "node-child-process"
   , "node-fs"
