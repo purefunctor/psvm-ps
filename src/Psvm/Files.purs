@@ -8,7 +8,7 @@ import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Node.Path (FilePath)
 import Node.Path as Path
-import Psvm.Shell (spawn)
+import Psvm.Shell (spawn, spawn_)
 import Psvm.Version (Version)
 import Psvm.Version as Version
 import Text.Parsing.StringParser (runParser)
@@ -42,13 +42,13 @@ getDownloadUrl version =
 
 mkdir :: FilePath -> Effect Unit
 mkdir path = do
-  void $ spawn "mkdir" [ "-p", path ]
+  spawn_ "mkdir" [ "-p", path ]
 
 
 downloadPurs :: PsvmFolder -> Version -> Effect Unit
 downloadPurs psvm version = do
   mkdir psvm.archives
-  void $ spawn "curl"
+  spawn_ "curl"
     [ "-L", getDownloadUrl version
     , "-o", Path.concat [ psvm.archives, Version.toString version <> ".tar.gz" ]
     ]
@@ -60,8 +60,8 @@ unpackPurs psvm version = do
 
   mkdir $ Path.concat [ psvm.versions, version' ]
 
-  void $ spawn "tar"
-    [ "-xvf", Path.concat [ psvm.archives, version' <> ".tar.gz" ]
+  spawn_ "tar"
+    [ "-xf", Path.concat [ psvm.archives, version' <> ".tar.gz" ]
     , "-C", Path.concat [ psvm.versions, version' ]
     ]
 
@@ -70,7 +70,7 @@ selectPurs :: PsvmFolder -> Version -> Effect Unit
 selectPurs psvm version = do
   mkdir psvm.versions
 
-  void $ spawn "cp"
+  spawn_ "cp"
     [ "-f"
     , Path.concat [ psvm.versions, Version.toString version, "purescript", "purs" ]
     , Path.concat [ psvm.current, "bin" ]
@@ -79,15 +79,14 @@ selectPurs psvm version = do
 
 removePurs :: PsvmFolder -> Version -> Effect Unit
 removePurs psvm version = do
-  void $ spawn "rm"
+  spawn_ "rm"
     [ "-r",  Path.concat [ psvm.versions, Version.toString version ]
     ]
 
 
-
 cleanPurs :: PsvmFolder -> Effect Unit
 cleanPurs psvm = do
-  void $ spawn "rm"
+  spawn_ "rm"
     [ "-r", Path.concat [ psvm.archives, "**" ]
     ]
 
