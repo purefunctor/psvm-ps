@@ -11,6 +11,7 @@ import Data.Show.Generic (genericShow)
 import Effect (Effect)
 import Effect.Console as Console
 import Node.Process as Process
+import Psvm.Files (cleanPurs, downloadPurs, getPsvmFolder, removePurs, selectPurs, unpackPurs)
 import Psvm.Ls as Ls
 import Psvm.Version (Version)
 import Psvm.Version as Version
@@ -22,6 +23,7 @@ data Command
   | Uninstall (Maybe Version)
   | Use (Maybe Version)
   | Ls { remote :: Boolean }
+  | Clean
 
 derive instance genericCommand :: Generic Command _
 
@@ -48,6 +50,9 @@ commandParser =
       flagHelp *>
         ( flag [ "-r", "--remote" ] "List remote versions?" # boolean )
           <#> \remote -> Ls { remote }
+
+  , command [ "clean" ] "Use a PureScript version." $
+      flagHelp $> Clean
   ]
 
 {-----------------------------------------------------------------------}
@@ -72,12 +77,41 @@ perform argv =
   where
     performCommand psvm =
       case _ of
+        Install mv ->
+          tryVersion mv \v -> do
+            downloadPurs psvm v
+            unpackPurs psvm v
+            Console.log $
+              "Installed PureScript: " <> Version.toString v
+
+        Uninstall mv ->
+          tryVersion mv \v -> do
+            removePurs psvm v
+            Console.log $
+              "Uninstalled PureScript: " <> Version.toString v
+
+        Use mv -> do
+          tryVersion mv \v -> do
+            selectPurs psvm v
+            Console.log $
+              "Using PureScript: " <> Version.toString v
+
         Ls { remote }
           | remote    -> Ls.printRemote
           | otherwise -> Ls.printLocal psvm
 
-        c ->
-          Console.logShow c *> Process.exit 0
+        Clean -> do
+          cleanPurs psvm
+          Console.log $
+            "Cleaned artifacts on: " <> psvm.archives
+
+    tryVersion mv cb =
+      case mv of
+        Nothing -> do
+          Console.error "Invalid version"
+          Process.exit 1
+        Just v -> cb v
+
 
 
 parser :: ArgParser Command
