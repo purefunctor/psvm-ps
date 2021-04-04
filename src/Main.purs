@@ -48,10 +48,10 @@ commandParser =
 
   , command [ "ls" ] "List PureScript versions." $
       flagHelp *>
-        ( flag [ "-r", "--remote" ] "List remote versions?" # boolean )
+        ( flag [ "-r", "--remote" ] "List remote versions." # boolean )
           <#> \remote -> Ls { remote }
 
-  , command [ "clean" ] "Use a PureScript version." $
+  , command [ "clean" ] "Clean downloaded artifacts." $
       flagHelp $> Clean
   ]
 
