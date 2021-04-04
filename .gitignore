@@ -2,11 +2,11 @@
 /node_modules/
 /.pulp-cache/
 /output/
-/dce-outputt/
+/dce-output/
 /dist/
 /generated-docs/
 /.psc-package/
 /.psc*
 /.purs*
 /.psa*
-/.spago
+/.spago/
