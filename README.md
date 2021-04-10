@@ -1,7 +1,7 @@
 # psvm-ps
 PureScript version management in PureScript, expanding upon [psvm-js](https://github.com/ThomasCrevoisier/psvm-js).
 
-Installs files under `$HOME/psvm`, downloads and unpacks PureScript releases using `curl` and `tar` respectively.
+Installs files under `$HOME/.psvm`, downloads and unpacks PureScript releases using `curl` and `tar` respectively.
 
 As such, this tool currently only supports Linux as I don't have access to Windows/MacOS environments. Pull requests to add compatibility for these two operating systems is welcome.
 
@@ -11,7 +11,7 @@ psvm-ps
     PureScript version management in PureScript.
 
     --help,-h        Show this help message.
-    -v,--versions    Show the installed psvm-ps version.
+    --version,-v     Show the installed psvm-ps version.
 
     clean            Clean downloaded artifacts.
     install          Install a PureScript version.

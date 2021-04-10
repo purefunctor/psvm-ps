@@ -120,7 +120,7 @@ parser =
 
   where
     versionFlag =
-      flagInfo [ "-v", "--versions" ]
+      flagInfo [ "--version", "-v" ]
         "Show the installed psvm-ps version." version
 
 {-----------------------------------------------------------------------}
