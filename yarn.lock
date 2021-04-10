@@ -11,15 +11,3 @@ esbuild@^0.11.5:
   version "0.11.5"
   resolved "https://registry.yarnpkg.com/esbuild/-/esbuild-0.11.5.tgz#25b18a2ff2fb9580683edce26a48f64c08c2f2df"
   integrity sha512-aRs6jAE+bVRp1tyfzUugAw1T/Y0Fwzp4Z2ROikF3h+UifoD5QlEbEYQGc6orNnnSIRhWR5VWBH7LozlAumaLHg==
-
-"psvm-ps@file:/home/pure/PureFunctor/PureScript/psvm-ps/psvm-ps-v0.1.0.tgz":
-  version "0.1.0"
-  resolved "file:/home/pure/PureFunctor/PureScript/psvm-ps/psvm-ps-v0.1.0.tgz#c7ee736f0b1ec08dab26a65aace1017dda47690e"
-  dependencies:
-    psvm-ps "file:psvm-ps-v0.1.0.tgz"
-
-"psvm-ps@file:psvm-ps-v0.1.0.tgz":
-  version "0.1.0"
-  resolved "file:psvm-ps-v0.1.0.tgz#27d0e24357aa99e9c0327aadb94558fad3b9f3bf"
-  dependencies:
-    psvm-ps "file:psvm-ps-v0.1.0.tgz"
