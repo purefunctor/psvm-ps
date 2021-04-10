@@ -6,8 +6,10 @@ import Data.Array as Array
 import Data.Either (hush)
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
+import Effect.Console (log)
 import Node.Path (FilePath)
 import Node.Path as Path
+import Psvm.Foreign.Download (downloadUrlTo, extractFromTo)
 import Psvm.Shell (spawn, spawn_)
 import Psvm.Version (Version)
 import Psvm.Version as Version
@@ -45,25 +47,19 @@ mkdir path = do
   spawn_ "mkdir" [ "-p", path ]
 
 
-downloadPurs :: PsvmFolder -> Version -> Effect Unit
-downloadPurs psvm version = do
+installPurs :: PsvmFolder -> Version -> Effect Unit
+installPurs psvm version = do
   mkdir psvm.archives
-  spawn_ "curl"
-    [ "-L", getDownloadUrl version
-    , "-o", Path.concat [ psvm.archives, Version.toString version <> ".tar.gz" ]
-    ]
 
-
-unpackPurs :: PsvmFolder -> Version -> Effect Unit
-unpackPurs psvm version = do
   let version' = Version.toString version
+      url = getDownloadUrl version
+      dnl = Path.concat [ psvm.archives, version' <> ".tar.gz" ]
+      ins = Path.concat [ psvm.versions, version' ]
 
-  mkdir $ Path.concat [ psvm.versions, version' ]
-
-  spawn_ "tar"
-    [ "-xf", Path.concat [ psvm.archives, version' <> ".tar.gz" ]
-    , "-C", Path.concat [ psvm.versions, version' ]
-    ]
+  downloadUrlTo url dnl do
+    log $ "Downloaded: " <> version'
+    extractFromTo dnl ins do
+      log $ "Installed: " <> ins
 
 
 selectPurs :: PsvmFolder -> Version -> Effect Unit

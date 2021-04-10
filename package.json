@@ -19,5 +19,10 @@
   "devDependencies": {
     "esbuild": "^0.11.5",
     "esbuild-plugin-purescript": "^1.0.0"
+  },
+  "dependencies": {
+    "cli-progress": "^3.9.0",
+    "decompress": "^4.2.1",
+    "download": "^8.0.0"
   }
 }

@@ -11,7 +11,7 @@ import Data.Show.Generic (genericShow)
 import Effect (Effect)
 import Effect.Console as Console
 import Node.Process as Process
-import Psvm.Files (cleanPurs, downloadPurs, getPsvmFolder, removePurs, selectPurs, unpackPurs)
+import Psvm.Files (cleanPurs, getPsvmFolder, installPurs, removePurs, selectPurs)
 import Psvm.Ls as Ls
 import Psvm.Version (Version)
 import Psvm.Version as Version
@@ -79,10 +79,7 @@ perform argv =
       case _ of
         Install mv ->
           tryVersion mv \v -> do
-            downloadPurs psvm v
-            unpackPurs psvm v
-            Console.log $
-              "Installed PureScript: " <> Version.toString v
+            installPurs psvm v
 
         Uninstall mv ->
           tryVersion mv \v -> do
