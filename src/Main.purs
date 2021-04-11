@@ -120,7 +120,7 @@ name = "psvm-ps"
 
 
 version :: String
-version = "psvm-ps - v0.1.2"
+version = "psvm-ps - v0.2.0"
 
 
 about :: String
