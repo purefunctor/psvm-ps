@@ -11,7 +11,7 @@ import Data.Show.Generic (genericShow)
 import Effect (Effect)
 import Effect.Console as Console
 import Node.Process as Process
-import Psvm.Files (cleanPurs, downloadPurs, getPsvmFolder, removePurs, selectPurs, unpackPurs)
+import Psvm.Files (cleanPurs, getPsvmFolder, installPurs, removePurs, selectPurs)
 import Psvm.Ls as Ls
 import Psvm.Version (Version)
 import Psvm.Version as Version
@@ -79,31 +79,21 @@ perform argv =
       case _ of
         Install mv ->
           tryVersion mv \v -> do
-            downloadPurs psvm v
-            unpackPurs psvm v
-            Console.log $
-              "Installed PureScript: " <> Version.toString v
+            installPurs psvm v
 
         Uninstall mv ->
           tryVersion mv \v -> do
             removePurs psvm v
-            Console.log $
-              "Uninstalled PureScript: " <> Version.toString v
 
         Use mv -> do
           tryVersion mv \v -> do
             selectPurs psvm v
-            Console.log $
-              "Using PureScript: " <> Version.toString v
 
         Ls { remote }
           | remote    -> Ls.printRemote
           | otherwise -> Ls.printLocal psvm
 
-        Clean -> do
-          cleanPurs psvm
-          Console.log $
-            "Cleaned artifacts on: " <> psvm.archives
+        Clean -> cleanPurs psvm
 
     tryVersion mv cb =
       case mv of
@@ -120,7 +110,7 @@ parser =
 
   where
     versionFlag =
-      flagInfo [ "-v", "--versions" ]
+      flagInfo [ "--version", "-v" ]
         "Show the installed psvm-ps version." version
 
 {-----------------------------------------------------------------------}
@@ -130,7 +120,7 @@ name = "psvm-ps"
 
 
 version :: String
-version = "psvm-ps - v0.1.2"
+version = "psvm-ps - v0.2.0"
 
 
 about :: String

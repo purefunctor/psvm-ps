@@ -2,18 +2,17 @@ module Psvm.Files where
 
 import Prelude
 
-import Data.Array as Array
-import Data.Either (hush)
-import Data.Maybe (Maybe(..))
+import Data.Either (Either(..))
 import Effect (Effect)
+import Effect.Console (log)
+import Effect.Console as Console
+import Node.FS.Async as FS
 import Node.Path (FilePath)
 import Node.Path as Path
-import Psvm.Shell (spawn, spawn_)
+import Node.Process as Process
+import Psvm.Foreign.Download (downloadUrlTo, extractFromTo)
 import Psvm.Version (Version)
 import Psvm.Version as Version
-import Text.Parsing.StringParser (runParser)
-import Text.Parsing.StringParser.CodeUnits (char, eof, regex)
-import Text.Parsing.StringParser.Combinators (manyTill)
 
 
 type PsvmFolder =
@@ -40,68 +39,61 @@ getDownloadUrl version =
     <> show version <> "/linux64.tar.gz"
 
 
-mkdir :: FilePath -> Effect Unit
-mkdir path = do
-  spawn_ "mkdir" [ "-p", path ]
+foreign import mkdirRecursive :: String -> Effect Unit -> Effect Unit
 
 
-downloadPurs :: PsvmFolder -> Version -> Effect Unit
-downloadPurs psvm version = do
-  mkdir psvm.archives
-  spawn_ "curl"
-    [ "-L", getDownloadUrl version
-    , "-o", Path.concat [ psvm.archives, Version.toString version <> ".tar.gz" ]
-    ]
-
-
-unpackPurs :: PsvmFolder -> Version -> Effect Unit
-unpackPurs psvm version = do
+installPurs :: PsvmFolder -> Version -> Effect Unit
+installPurs psvm version = do
   let version' = Version.toString version
+      url = getDownloadUrl version
+      dnl = Path.concat [ psvm.archives, version' <> ".tar.gz" ]
+      ins = Path.concat [ psvm.versions, version' ]
 
-  mkdir $ Path.concat [ psvm.versions, version' ]
+  mkdirRecursive psvm.archives $
+    downloadUrlTo url dnl do
+      log $ "Downloaded: " <> version'
+      extractFromTo dnl ins do
+        log $ "Installed: " <> ins
 
-  spawn_ "tar"
-    [ "-xf", Path.concat [ psvm.archives, version' <> ".tar.gz" ]
-    , "-C", Path.concat [ psvm.versions, version' ]
-    ]
+
+foreign import copyFileImpl :: String -> String -> Effect Unit -> Effect Unit
 
 
 selectPurs :: PsvmFolder -> Version -> Effect Unit
 selectPurs psvm version = do
-  mkdir psvm.versions
+  let version' = Version.toString version
+      src = Path.concat [ psvm.versions, version', "purescript", "purs" ]
+      to = Path.concat [ psvm.current, "bin", "purs" ]
 
-  spawn_ "cp"
-    [ "-f"
-    , Path.concat [ psvm.versions, Version.toString version, "purescript", "purs" ]
-    , Path.concat [ psvm.current, "bin" ]
-    ]
+  mkdirRecursive psvm.archives $
+    copyFileImpl src to do
+      Console.log $ "Using PureScript: " <> version'
+
+
+foreign import rmRecursiveImpl :: String -> Effect Unit -> Effect Unit
 
 
 removePurs :: PsvmFolder -> Version -> Effect Unit
 removePurs psvm version = do
-  spawn_ "rm"
-    [ "-r",  Path.concat [ psvm.versions, Version.toString version ]
-    ]
+  let version' = Version.toString version
+      target = Path.concat [ psvm.versions, version' ]
+  rmRecursiveImpl target do
+    Console.log $ "Uninstalled PureScript: " <> version'
 
 
 cleanPurs :: PsvmFolder -> Effect Unit
-cleanPurs psvm = do
-  spawn_ "rm"
-    [ "-r", Path.concat [ psvm.archives, "**" ]
-    ]
+cleanPurs psvm =
+  rmRecursiveImpl psvm.archives do
+    Console.log $ "Cleaned artifacts on: " <> psvm.archives
 
 
-listPurs :: PsvmFolder -> Effect ( Array String )
-listPurs psvm = do
-  mkdir psvm.versions
-
-  let split = manyTill ( regex ".+" <* char '\n' ) eof
-
-  mVersions <- hush <<< runParser split <$>
-    spawn "ls" [ "-1", "-X", psvm.versions ]
-
-  case mVersions of
-    Nothing ->
-      pure [ ]
-    Just versions ->
-      pure $ Array.fromFoldable versions
+listPurs :: PsvmFolder -> (Array String -> Effect Unit) -> Effect Unit
+listPurs psvm cb = do
+  mkdirRecursive psvm.archives $
+    FS.readdir psvm.versions $
+      case _ of
+        Left err -> do
+          Console.error $ "Fatal error: " <> show err
+          Process.exit 1
+        Right files ->
+          cb files

@@ -5,12 +5,18 @@ import Prelude
 import Data.Argonaut.Decode (class DecodeJson, decodeJson, parseJson, (.:))
 import Data.Either (Either(..))
 import Data.Newtype (class Newtype, unwrap)
-import Data.Traversable (for_, traverse)
+import Data.Options ((:=))
+import Data.Traversable (for_)
+import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Console as Console
+import Effect.Ref as Ref
+import Foreign.Object (fromFoldable)
+import Node.Encoding as Encoding
+import Node.HTTP.Client as Client
 import Node.Process as Process
+import Node.Stream (end, onDataString, onEnd)
 import Psvm.Files (PsvmFolder, listPurs)
-import Psvm.Shell (spawn)
 
 
 releaseUrl :: String
@@ -36,35 +42,50 @@ instance decodeJsonRleaseJson :: DecodeJson ReleaseJson where
     pure $ ReleaseJson { tagName, assetsUrl }
 
 
-getReleases :: Effect ( Array ReleaseJson )
-getReleases = do
-  result <- spawn "curl" [ "-s", releaseUrl ]
-  case parseJson result >>= decodeJson of
-    Left err ->
-      Console.errorShow err *> Process.exit 1
-    Right releases ->
-      pure releases
+getReleases :: ( Array ReleaseJson -> Effect Unit ) -> Effect Unit
+getReleases cb = do
+  let headers_ = Client.RequestHeaders $ fromFoldable
+        [ Tuple "User-Agent" "psvm-ps"
+        ]
 
+      options =
+        Client.headers := headers_ <>
+        Client.hostname := "api.github.com" <>
+        Client.path := "/repos/purescript/purescript/releases" <>
+        Client.method := "GET" <>
+        Client.protocol := "https:" <>
+        Client.port := 443
 
-listRemote :: Effect ( Array String  )
-listRemote = getReleases >>= traverse (pure <<< _.tagName <<< unwrap)
+  req <- Client.request options \response -> do
+    let stream = Client.responseAsStream response
+
+    buffer <- Ref.new ""
+
+    onDataString stream Encoding.UTF8 \chunk -> do
+      Ref.modify_ (_ <> chunk) buffer
+
+    onEnd stream do
+      result <- Ref.read buffer
+      case parseJson result >>= decodeJson of
+        Left err ->
+          Console.errorShow err *> Process.exit 1
+        Right releases -> do
+          cb releases
+
+  end (Client.requestAsStream req) (pure unit)
 
 
 printRemote :: Effect Unit
 printRemote = do
-  versions <- getReleases
-
-  Console.log "Available PureScript Versions:"
-
-  for_ versions \version ->
-    Console.log ( "    " <> (unwrap version).tagName )
+  getReleases \versions -> do
+    Console.log "Available PureScript Versions:"
+    for_ versions \version ->
+      Console.log ( "    " <> (unwrap version).tagName )
 
 
 printLocal :: PsvmFolder -> Effect Unit
 printLocal psvm = do
-  versions <- listPurs psvm
-
-  Console.log "Available PureScript Versions:"
-
-  for_ versions \version ->
-    Console.log ( "    " <> version )
+  listPurs psvm \versions -> do
+    Console.log "Available PureScript Versions:"
+    for_ versions \version ->
+      Console.log ( "    " <> version )

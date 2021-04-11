@@ -1,6 +1,6 @@
 {
   "name": "psvm-ps",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "PureScript version management in PureScript.",
   "license": "BSD-3-Clause",
   "private": false,
@@ -19,5 +19,11 @@
   "devDependencies": {
     "esbuild": "^0.11.5",
     "esbuild-plugin-purescript": "^1.0.0"
+  },
+  "dependencies": {
+    "cli-progress": "^3.9.0",
+    "decompress": "^4.2.1",
+    "download": "^8.0.0",
+    "fs-extra": "^9.1.0"
   }
 }
