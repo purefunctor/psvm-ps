@@ -9,6 +9,7 @@ esbuild
     minify: true,
     outdir: "dist",
     platform: "node",
+    external: ["electron"],
     banner: {
       "js": "#!/usr/bin/env node",
     },
