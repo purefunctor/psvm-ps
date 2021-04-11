@@ -1,6 +1,6 @@
 {
   "name": "psvm-ps",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "PureScript version management in PureScript.",
   "license": "BSD-3-Clause",
   "private": false,
