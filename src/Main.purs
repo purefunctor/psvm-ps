@@ -84,23 +84,16 @@ perform argv =
         Uninstall mv ->
           tryVersion mv \v -> do
             removePurs psvm v
-            Console.log $
-              "Uninstalled PureScript: " <> Version.toString v
 
         Use mv -> do
           tryVersion mv \v -> do
             selectPurs psvm v
-            Console.log $
-              "Using PureScript: " <> Version.toString v
 
         Ls { remote }
           | remote    -> Ls.printRemote
           | otherwise -> Ls.printLocal psvm
 
-        Clean -> do
-          cleanPurs psvm
-          Console.log $
-            "Cleaned artifacts on: " <> psvm.archives
+        Clean -> cleanPurs psvm
 
     tryVersion mv cb =
       case mv of

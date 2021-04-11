@@ -62,9 +62,7 @@ printRemote = do
 
 printLocal :: PsvmFolder -> Effect Unit
 printLocal psvm = do
-  versions <- listPurs psvm
-
-  Console.log "Available PureScript Versions:"
-
-  for_ versions \version ->
-    Console.log ( "    " <> version )
+  listPurs psvm \versions -> do
+    Console.log "Available PureScript Versions:"
+    for_ versions \version ->
+      Console.log ( "    " <> version )

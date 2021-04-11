@@ -12,6 +12,7 @@
   , "newtype"
   , "node-buffer"
   , "node-child-process"
+  , "node-fs"
   , "node-path"
   , "node-process"
   , "prelude"

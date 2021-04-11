@@ -23,6 +23,7 @@
   "dependencies": {
     "cli-progress": "^3.9.0",
     "decompress": "^4.2.1",
-    "download": "^8.0.0"
+    "download": "^8.0.0",
+    "fs-extra": "^9.1.0"
   }
 }
