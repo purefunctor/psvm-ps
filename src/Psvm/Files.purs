@@ -3,116 +3,105 @@ module Psvm.Files where
 import Prelude
 
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Console (log)
 import Effect.Console as Console
 import Node.FS.Async as FS
 import Node.Path (FilePath)
 import Node.Path as Path
-import Node.Platform (Platform(..))
 import Node.Process as Process
 import Psvm.Foreign.Download (downloadUrlTo, extractFromTo)
+import Psvm.Platform as Platform
+import Psvm.Types (Psvm)
 import Psvm.Version (Version)
-import Psvm.Version as Version
-
+import Run (liftEffect)
 
 type PsvmFolder =
   { archives :: FilePath
-  , current  :: FilePath
+  , current :: FilePath
   , versions :: FilePath
   }
 
-
-getPsvmFolder :: FilePath -> PsvmFolder
-getPsvmFolder base =
-  let
-    base' = Path.concat [ base, ".psvm" ]
-  in
-    { archives : Path.concat [ base', "archives" ]
-    , current  : Path.concat [ base', "current"  ]
-    , versions : Path.concat [ base', "versions" ]
+askPsvmFolder :: Psvm PsvmFolder
+askPsvmFolder = do
+  home <- Platform.askHome
+  let base = Path.concat [ home, ".psvm" ]
+  pure
+    { archives: Path.concat [ base, "archives" ]
+    , current: Path.concat [ base, "current" ]
+    , versions: Path.concat [ base, "versions" ]
     }
 
-getPlatformName :: Effect String
-getPlatformName =
-  case Process.platform of
-    Nothing -> do
-      Console.error "unknown platform"
-      Process.exit 1
-    Just platform ->
-      case platform of
-        Linux -> pure "linux64"
-        Darwin -> pure "macos"
-        Win32 -> pure "win64"
-        _ -> do
-          Console.error "unsupported platform"
-          Process.exit 1
+askDownloadUrl :: Version -> Psvm String
+askDownloadUrl version = do
+  platform <- Platform.askReleaseName
+  pure $ "https://github.com/purescript/purescript/releases/download/"
+    <> show version
+    <> "/"
+    <> platform
+    <> ".tar.gz"
 
+installPurs :: Version -> Psvm Unit
+installPurs version = do
+  psvm <- askPsvmFolder
+  url <- askDownloadUrl version
 
-getDownloadUrl :: Version -> String -> String
-getDownloadUrl version platform =
-  "https://github.com/purescript/purescript/releases/download/"
-    <> show version <> "/" <> platform <> ".tar.gz"
+  let
+    vrs = show version
+    dnl = Path.concat [ psvm.archives, vrs <> ".tar.gz" ]
+    unp = Path.concat [ psvm.versions, vrs ]
 
-
-foreign import mkdirRecursive :: String -> Effect Unit -> Effect Unit
-
-
-installPurs :: PsvmFolder -> Version -> Effect Unit
-installPurs psvm version = do
-  platform <- getPlatformName
-
-  let version' = Version.toString version
-      url = getDownloadUrl version platform
-      dnl = Path.concat [ psvm.archives, version' <> ".tar.gz" ]
-      ins = Path.concat [ psvm.versions, version' ]
-
-  mkdirRecursive psvm.archives $
+  liftEffect $ mkdirRecursive psvm.archives $
     downloadUrlTo url dnl do
-      log $ "Downloaded: " <> version'
-      extractFromTo dnl ins do
-        log $ "Installed: " <> ins
+      log $ "Downloaded: " <> vrs
+      extractFromTo dnl unp do
+        log $ "Installed: " <> unp
 
+selectPurs :: Version -> Psvm Unit
+selectPurs version = do
+  psvm <- askPsvmFolder
 
-foreign import copyFileImpl :: String -> String -> Effect Unit -> Effect Unit
+  let
+    vrs = show version
+    src = Path.concat [ psvm.versions, vrs, "purescript", "purs" ]
+    to = Path.concat [ psvm.current, "bin", "purs" ]
 
+  liftEffect $ mkdirRecursive psvm.archives $
+    copyFile src to do
+      Console.log $ "Using PureScript: " <> vrs
 
-selectPurs :: PsvmFolder -> Version -> Effect Unit
-selectPurs psvm version = do
-  let version' = Version.toString version
-      src = Path.concat [ psvm.versions, version', "purescript", "purs" ]
-      to = Path.concat [ psvm.current, "bin", "purs" ]
+removePurs :: Version -> Psvm Unit
+removePurs version = do
+  psvm <- askPsvmFolder
 
-  mkdirRecursive psvm.archives $
-    copyFileImpl src to do
-      Console.log $ "Using PureScript: " <> version'
+  let
+    vrs = show version
+    target = Path.concat [ psvm.versions, vrs ]
 
+  liftEffect $ rmRecursive target do
+    Console.log $ "Uninstalled PureScript: " <> vrs
 
-foreign import rmRecursiveImpl :: String -> Effect Unit -> Effect Unit
+cleanPurs :: Psvm Unit
+cleanPurs = do
+  psvm <- askPsvmFolder
 
-
-removePurs :: PsvmFolder -> Version -> Effect Unit
-removePurs psvm version = do
-  let version' = Version.toString version
-      target = Path.concat [ psvm.versions, version' ]
-  rmRecursiveImpl target do
-    Console.log $ "Uninstalled PureScript: " <> version'
-
-
-cleanPurs :: PsvmFolder -> Effect Unit
-cleanPurs psvm =
-  rmRecursiveImpl psvm.archives do
+  liftEffect $ rmRecursive psvm.archives do
     Console.log $ "Cleaned artifacts on: " <> psvm.archives
 
-
-listPurs :: PsvmFolder -> (Array String -> Effect Unit) -> Effect Unit
+listPurs :: PsvmFolder -> (Array String -> Effect Unit) -> Psvm Unit
 listPurs psvm cb = do
-  mkdirRecursive psvm.archives $
-    FS.readdir psvm.versions $
+  liftEffect $ mkdirRecursive psvm.archives
+    $ FS.readdir psvm.versions
+    $
       case _ of
         Left err -> do
           Console.error $ "Fatal error: " <> show err
           Process.exit 1
         Right files ->
           cb files
+
+foreign import mkdirRecursive :: String -> Effect Unit -> Effect Unit
+
+foreign import copyFile :: String -> String -> Effect Unit -> Effect Unit
+
+foreign import rmRecursive :: String -> Effect Unit -> Effect Unit

@@ -1,29 +1,29 @@
 {
   "name": "psvm-ps",
-  "version": "0.2.1",
+  "version": "0.2.3",
   "description": "PureScript version management in PureScript.",
   "license": "BSD-3-Clause",
   "private": false,
   "scripts": {
-    "build": "spago build -u '--codegen corefn'",
-    "build:zephyr": "yarn build && zephyr -f Main",
-    "bundle": "node build.js",
-    "prepack": "yarn build:zephyr && yarn bundle && rm -rf .spago"
+    "bundle": "spago bundle-module -t psvm.js && node bundle.js && node license.js"
   },
   "bin": {
     "psvm": "dist/index.js"
   },
   "files": [
-    "dist/index.js"
+    "dist/index.js",
+    "dist/psvm.js",
+    "dist/LICENSE-purs"
   ],
   "devDependencies": {
-    "esbuild": "^0.11.5",
-    "esbuild-plugin-purescript": "^1.0.0"
+    "esbuild": "^0.12.26",
+    "glob": "^7.1.7",
+    "multistream": "^4.1.0"
   },
   "dependencies": {
     "cli-progress": "^3.9.0",
     "decompress": "^4.2.1",
     "download": "^8.0.0",
-    "fs-extra": "^9.1.0"
+    "fs-extra": "^10.0.0"
   }
 }
