@@ -29,7 +29,9 @@ jobs:
         version: 6.10.3
 
     - name: Install Dependencies
-      run: pnpm install
+      run: |
+        pnpm install
+        pnpm bundle
 
     - name: Publish Package
       run: pnpm publish
