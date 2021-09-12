@@ -4,19 +4,17 @@ specifiers:
   cli-progress: ^3.9.0
   decompress: ^4.2.1
   download: ^8.0.0
-  esbuild: ^0.11.5
-  esbuild-plugin-purescript: ^1.0.0
-  fs-extra: ^9.1.0
+  esbuild: ^0.12.26
+  fs-extra: '10'
 
 dependencies:
   cli-progress: 3.9.0
   decompress: 4.2.1
   download: 8.0.0
-  fs-extra: 9.1.0
+  fs-extra: 10.0.0
 
 devDependencies:
-  esbuild: 0.11.23
-  esbuild-plugin-purescript: 1.1.1
+  esbuild: 0.12.26
 
 packages:
 
@@ -35,11 +33,6 @@ packages:
     engines: {node: '>=4'}
     dependencies:
       file-type: 4.4.0
-    dev: false
-
-  /at-least-node/1.0.0:
-    resolution: {integrity: sha512-+q/t7Ekv1EDY2l6Gda6LLiX14rU9TV20Wa3ofeQmwPFZbOMo9DXrLbOjFaaclkXKWidIaopwAObQDqwWtGUjqg==}
-    engines: {node: '>= 4.0.0'}
     dev: false
 
   /base64-js/1.5.1:
@@ -221,12 +214,8 @@ packages:
       once: 1.4.0
     dev: false
 
-  /esbuild-plugin-purescript/1.1.1:
-    resolution: {integrity: sha512-0DTgNMvVAuaOJCuIXpL4/70asdAfViyubiBkafO8EBQn9j+cL55489wQnz5tYHAMjwNxBuWjGeK7SEHegx6qVg==}
-    dev: true
-
-  /esbuild/0.11.23:
-    resolution: {integrity: sha512-iaiZZ9vUF5wJV8ob1tl+5aJTrwDczlvGP0JoMmnpC2B0ppiMCu8n8gmy5ZTGl5bcG081XBVn+U+jP+mPFm5T5Q==}
+  /esbuild/0.12.26:
+    resolution: {integrity: sha512-YmTkhPKjvTJ+G5e96NyhGf69bP+hzO0DscqaVJTi5GM34uaD4Ecj7omu5lJO+NrxCUBRhy2chONLK1h/2LwoXA==}
     hasBin: true
     requiresBuild: true
     dev: true
@@ -307,11 +296,10 @@ packages:
     resolution: {integrity: sha512-y6OAwoSIf7FyjMIv94u+b5rdheZEjzR63GTyZJm5qh4Bi+2YgwLCcI/fPFZkL5PSixOt6ZNKm+w+Hfp/Bciwow==}
     dev: false
 
-  /fs-extra/9.1.0:
-    resolution: {integrity: sha512-hcg3ZmepS30/7BSFqRvoo3DOMQu7IjqxO5nCDt+zM9XWjb33Wg7ziNT+Qvqbuc3+gWpzO02JubVyk2G4Zvo1OQ==}
-    engines: {node: '>=10'}
+  /fs-extra/10.0.0:
+    resolution: {integrity: sha512-C5owb14u9eJwizKGdchcDUQeFtlSHHthBk8pbX9Vc1PFZrLombudjDnNns88aYslCyF6IY5SUw3Roz6xShcEIQ==}
+    engines: {node: '>=12'}
     dependencies:
-      at-least-node: 1.0.0
       graceful-fs: 4.2.8
       jsonfile: 6.1.0
       universalify: 2.0.0
