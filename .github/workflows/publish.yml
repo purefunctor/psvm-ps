@@ -24,7 +24,7 @@ jobs:
         spago: "0.20.3"
 
     - name: Install pnpm
-      uses: pnpm/actions-setup@v2.0.1
+      uses: pnpm/action-setup@v2.0.1
       with:
         version: 6.10.3
 
