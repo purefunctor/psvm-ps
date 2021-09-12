@@ -10,6 +10,7 @@ import Data.Maybe (Maybe(..))
 import Data.Show.Generic (genericShow)
 import Effect (Effect)
 import Effect.Console as Console
+import Node.Platform (Platform(..))
 import Node.Process as Process
 import Psvm.Files (cleanPurs, getPsvmFolder, installPurs, removePurs, selectPurs)
 import Psvm.Ls as Ls
@@ -60,20 +61,13 @@ commandParser =
 perform :: Array String -> Effect Unit
 perform argv =
   case parseArgs name about parser argv of
-
     Left e ->
       Console.log $ printArgError e
 
     Right c -> do
-      mHome <- Process.lookupEnv "HOME"
-
-      case mHome of
-        Nothing -> do
-          Console.error "Fatal: unset HOME"
-          Process.exit 1
-        Just home -> do
-          let psvm = getPsvmFolder home
-          performCommand psvm c
+      home <- getHome
+      let psvm = getPsvmFolder home
+      performCommand psvm c
   where
     performCommand psvm =
       case _ of
@@ -102,8 +96,6 @@ perform argv =
           Process.exit 1
         Just v -> cb v
 
-
-
 parser :: ArgParser Command
 parser =
   flagHelp *> versionFlag *> commandParser
@@ -112,6 +104,26 @@ parser =
     versionFlag =
       flagInfo [ "--version", "-v" ]
         "Show the installed psvm-ps version." version
+
+getHome :: Effect String
+getHome = do
+  mHome <- case Process.platform of
+    Nothing -> do
+      Console.error "unknown platform"
+      Process.exit 1
+    Just platform ->
+      case platform of
+        Linux -> Process.lookupEnv "HOME"
+        Darwin -> Process.lookupEnv "HOME"
+        Win32 -> Process.lookupEnv "USERPROFILE"
+        _ -> do
+          Console.error "unknown platform"
+          Process.exit 1
+  case mHome of
+    Nothing -> do
+      Console.error "Fatal: unset HOME"
+      Process.exit 1
+    Just home -> pure home
 
 {-----------------------------------------------------------------------}
 
@@ -129,6 +141,5 @@ about = "PureScript version management in PureScript."
 
 main :: Effect Unit
 main = do
-  cwd <- Process.cwd
   argv <- Array.drop 2 <$> Process.argv
   perform argv

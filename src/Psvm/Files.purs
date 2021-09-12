@@ -3,12 +3,14 @@ module Psvm.Files where
 import Prelude
 
 import Data.Either (Either(..))
+import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Console (log)
 import Effect.Console as Console
 import Node.FS.Async as FS
 import Node.Path (FilePath)
 import Node.Path as Path
+import Node.Platform (Platform(..))
 import Node.Process as Process
 import Psvm.Foreign.Download (downloadUrlTo, extractFromTo)
 import Psvm.Version (Version)
@@ -32,11 +34,26 @@ getPsvmFolder base =
     , versions : Path.concat [ base', "versions" ]
     }
 
+getPlatformName :: Effect String
+getPlatformName =
+  case Process.platform of
+    Nothing -> do
+      Console.error "unknown platform"
+      Process.exit 1
+    Just platform ->
+      case platform of
+        Linux -> pure "linux64"
+        Darwin -> pure "macos"
+        Win32 -> pure "win64"
+        _ -> do
+          Console.error "unsupported platform"
+          Process.exit 1
 
-getDownloadUrl :: Version -> String
-getDownloadUrl version =
+
+getDownloadUrl :: Version -> String -> String
+getDownloadUrl version platform =
   "https://github.com/purescript/purescript/releases/download/"
-    <> show version <> "/linux64.tar.gz"
+    <> show version <> "/" <> platform <> ".tar.gz"
 
 
 foreign import mkdirRecursive :: String -> Effect Unit -> Effect Unit
@@ -44,8 +61,10 @@ foreign import mkdirRecursive :: String -> Effect Unit -> Effect Unit
 
 installPurs :: PsvmFolder -> Version -> Effect Unit
 installPurs psvm version = do
+  platform <- getPlatformName
+
   let version' = Version.toString version
-      url = getDownloadUrl version
+      url = getDownloadUrl version platform
       dnl = Path.concat [ psvm.archives, version' <> ".tar.gz" ]
       ins = Path.concat [ psvm.versions, version' ]
 
