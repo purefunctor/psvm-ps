@@ -10,7 +10,6 @@ import Data.Maybe (Maybe(..))
 import Data.Show.Generic (genericShow)
 import Effect (Effect)
 import Effect.Console as Console
-import Effect.Exception (throw)
 import Node.Platform (Platform(..))
 import Node.Process as Process
 import Psvm.Files (cleanPurs, getPsvmFolder, installPurs, removePurs, selectPurs)
@@ -62,7 +61,6 @@ commandParser =
 perform :: Array String -> Effect Unit
 perform argv =
   case parseArgs name about parser argv of
-
     Left e ->
       Console.log $ printArgError e
 
@@ -107,20 +105,20 @@ parser =
       flagInfo [ "--version", "-v" ]
         "Show the installed psvm-ps version." version
 
-getHome :: Unit -> Effect String
+getHome :: Effect String
 getHome = do
-  mHome <-
-    case Process.platform of
-    Nothing -> Console.error "Process.platform unset"
-               throw "Process.platform unset"
-               Process.exit 1 :: (Effect (Maybe String))
-               -- Process.lookupEnv "HOME"
+  mHome <- case Process.platform of
+    Nothing -> do
+      Console.error "unknown platform"
+      Process.exit 1
     Just platform ->
       case platform of
-      Linux -> Process.lookupEnv "HOME"
-      Darwin -> Process.lookupEnv "HOME" -- Mac
-      Win32 -> Process.lookupEnv "USERPROFILE"
-      _ -> Process.lookupEnv "HOME"
+        Linux -> Process.lookupEnv "HOME"
+        Darwin -> Process.lookupEnv "HOME"
+        Win32 -> Process.lookupEnv "USERPROFILE"
+        _ -> do
+          Console.error "unknown platform"
+          Process.exit 1
   case mHome of
     Nothing -> do
       Console.error "Fatal: unset HOME"
@@ -143,6 +141,5 @@ about = "PureScript version management in PureScript."
 
 main :: Effect Unit
 main = do
-  cwd <- Process.cwd
   argv <- Array.drop 2 <$> Process.argv
   perform argv
