@@ -10,18 +10,16 @@ import Text.Parsing.StringParser (runParser)
 import Text.Parsing.StringParser.CodeUnits (char, regex)
 import Text.Parsing.StringParser.Combinators (optional)
 
-
 data Version = Version Int Int Int String
 
 derive instance eqVersion :: Eq Version
 
-instance ordVersion :: Ord Version where
+instance Ord Version where
   compare (Version major minor patch _) (Version major' minor' patch' _) =
     Array.fold [ compare major major', compare minor minor', compare patch patch' ]
 
-instance showVersion :: Show Version where
+instance Show Version where
   show = toString
-
 
 fromString :: String -> Maybe Version
 fromString = join <<< hush <<< runParser do
@@ -40,7 +38,6 @@ fromString = join <<< hush <<< runParser do
   extra <- regex ".*"
 
   pure $ Version <$> major <*> minor <*> patch <*> pure extra
-
 
 toString :: Version -> String
 toString (Version major minor patch extra) = Array.intercalate ""

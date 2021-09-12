@@ -1,7 +1,7 @@
 const fs = require("fs-extra");
 
 
-exports.rmRecursiveImpl = function(dir) {
+exports.rmRecursive = function(dir) {
   return function(cb) {
     return function() {
       fs.remove(dir, function(err) {
@@ -12,7 +12,7 @@ exports.rmRecursiveImpl = function(dir) {
 };
 
 
-exports.copyFileImpl = function(src) {
+exports.copyFile = function(src) {
   return function(to) {
     return function(cb) {
       return function () {

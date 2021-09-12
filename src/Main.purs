@@ -9,15 +9,12 @@ import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe(..))
 import Data.Show.Generic (genericShow)
 import Effect (Effect)
-import Effect.Console as Console
-import Node.Platform (Platform(..))
 import Node.Process as Process
-import Psvm.Files (cleanPurs, getPsvmFolder, installPurs, removePurs, selectPurs)
+import Psvm.Files as Files
 import Psvm.Ls as Ls
+import Psvm.Types (Psvm, exit, runPsvm)
 import Psvm.Version (Version)
 import Psvm.Version as Version
-
-{-----------------------------------------------------------------------}
 
 data Command
   = Install (Maybe Version)
@@ -26,120 +23,71 @@ data Command
   | Ls { remote :: Boolean }
   | Clean
 
-derive instance genericCommand :: Generic Command _
+derive instance Eq Command
+derive instance Generic Command _
 
-instance showCommand :: Show Command where
+instance Show Command where
   show = genericShow
-
 
 commandParser :: ArgParser Command
 commandParser =
   choose "command"
-  [ command [ "install" ] "Install a PureScript version." $
-      flagHelp *> anyNotFlag "VERSION" "version to install"
-        <#> Install <<< Version.fromString
+    [ command [ "install" ] "Install a PureScript version." $
+        flagHelp *> anyNotFlag "VERSION" "version to install"
+          <#> Install <<< Version.fromString
 
-  , command [ "uninstall" ] "Uninstall a PureScript version." $
-      flagHelp *> anyNotFlag "VERSION" "version to uninstall"
-        <#> Uninstall <<< Version.fromString
+    , command [ "uninstall" ] "Uninstall a PureScript version." $
+        flagHelp *> anyNotFlag "VERSION" "version to uninstall"
+          <#> Uninstall <<< Version.fromString
 
-  , command [ "use" ] "Use a PureScript version." $
-      flagHelp *> anyNotFlag "VERSION" "version to use"
-        <#> Use <<< Version.fromString
+    , command [ "use" ] "Use a PureScript version." $
+        flagHelp *> anyNotFlag "VERSION" "version to use"
+          <#> Use <<< Version.fromString
 
-  , command [ "ls" ] "List PureScript versions." $
-      flagHelp *>
-        ( flag [ "-r", "--remote" ] "List remote versions." # boolean )
+    , command [ "ls" ] "List PureScript versions." $
+        flagHelp *>
+          (flag [ "-r", "--remote" ] "List remote versions." # boolean)
           <#> \remote -> Ls { remote }
 
-  , command [ "clean" ] "Clean downloaded artifacts." $
-      flagHelp $> Clean
-  ]
+    , command [ "clean" ] "Clean downloaded artifacts." $
+        flagHelp $> Clean
+    ]
 
-{-----------------------------------------------------------------------}
-
-perform :: Array String -> Effect Unit
-perform argv =
-  case parseArgs name about parser argv of
-    Left e ->
-      Console.log $ printArgError e
-
-    Right c -> do
-      home <- getHome
-      let psvm = getPsvmFolder home
-      performCommand psvm c
-  where
-    performCommand psvm =
-      case _ of
-        Install mv ->
-          tryVersion mv \v -> do
-            installPurs psvm v
-
-        Uninstall mv ->
-          tryVersion mv \v -> do
-            removePurs psvm v
-
-        Use mv -> do
-          tryVersion mv \v -> do
-            selectPurs psvm v
-
-        Ls { remote }
-          | remote    -> Ls.printRemote
-          | otherwise -> Ls.printLocal psvm
-
-        Clean -> cleanPurs psvm
-
-    tryVersion mv cb =
-      case mv of
-        Nothing -> do
-          Console.error "Invalid version"
-          Process.exit 1
-        Just v -> cb v
-
-parser :: ArgParser Command
-parser =
-  flagHelp *> versionFlag *> commandParser
-
-  where
-    versionFlag =
-      flagInfo [ "--version", "-v" ]
-        "Show the installed psvm-ps version." version
-
-getHome :: Effect String
-getHome = do
-  mHome <- case Process.platform of
-    Nothing -> do
-      Console.error "unknown platform"
-      Process.exit 1
-    Just platform ->
-      case platform of
-        Linux -> Process.lookupEnv "HOME"
-        Darwin -> Process.lookupEnv "HOME"
-        Win32 -> Process.lookupEnv "USERPROFILE"
-        _ -> do
-          Console.error "unknown platform"
-          Process.exit 1
-  case mHome of
-    Nothing -> do
-      Console.error "Fatal: unset HOME"
-      Process.exit 1
-    Just home -> pure home
-
-{-----------------------------------------------------------------------}
-
-name :: String
-name = "psvm-ps"
-
-
-version :: String
-version = "psvm-ps - v0.2.1"
-
-
-about :: String
-about = "PureScript version management in PureScript."
-
-
-main :: Effect Unit
-main = do
+main :: String -> String -> String -> Effect Unit
+main name version about = do
   argv <- Array.drop 2 <$> Process.argv
-  perform argv
+  runPsvm {} (perform argv)
+  where
+  perform :: Array String -> Psvm Unit
+  perform argv =
+    case parseArgs name about parser argv of
+      Left e ->
+        exit 1 (printArgError e)
+      Right c ->
+        case c of
+          Install v ->
+            tryVersion v Files.installPurs
+
+          Uninstall v ->
+            tryVersion v Files.removePurs
+
+          Use v -> do
+            tryVersion v Files.selectPurs
+
+          Ls { remote }
+            | remote -> Ls.printRemote
+            | otherwise -> Ls.printLocal
+
+          Clean -> Files.cleanPurs
+    where
+    parser :: ArgParser Command
+    parser = flagHelp *> versionFlag *> commandParser
+      where
+      versionFlag =
+        flagInfo [ "--version", "-v" ] "Show the installed psvm-ps version." version
+
+    tryVersion :: Maybe Version -> (Version -> Psvm Unit) -> Psvm Unit
+    tryVersion v command =
+      case v of
+        Nothing -> exit 1 "Invalid version"
+        Just v' -> command v'
