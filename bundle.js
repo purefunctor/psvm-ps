@@ -3,9 +3,9 @@ const path = require("path");
 
 esbuild
   .build({
-    entryPoints: ["dist/index.js", "dist/psvm.js"],
+    entryPoints: ["index.js", "psvm.js"],
     minify: true,
-    outdir: "bin",
+    outdir: "dist",
     platform: "node",
     banner: {
       "js": "#!/usr/bin/env node",

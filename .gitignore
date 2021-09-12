@@ -10,3 +10,4 @@
 /.purs*
 /.psa*
 /.spago/
+/psvm.js
