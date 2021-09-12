@@ -21,8 +21,10 @@
   , "prelude"
   , "psci-support"
   , "refs"
+  , "run"
   , "string-parsers"
   , "tuples"
+  , "typelevel-prelude"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs" ]
