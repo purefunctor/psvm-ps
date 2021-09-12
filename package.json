@@ -5,16 +5,14 @@
   "license": "BSD-3-Clause",
   "private": false,
   "scripts": {
-    "build": "spago build -u '--codegen corefn'",
-    "build:zephyr": "pnpm build && zephyr -f Main",
-    "bundle": "node build.js",
-    "prepack": "pnpm build:zephyr && pnpm bundle && rm -rf .spago"
+    "bundle": "spago bundle-module -t dist/psvm.js && node bundle.js"
   },
   "bin": {
-    "psvm": "dist/index.js"
+    "psvm": "bin/index.js"
   },
   "files": [
-    "dist/index.js"
+    "bin/index.js",
+    "bin/psvm.js"
   ],
   "devDependencies": {
     "esbuild": "^0.11.5",
