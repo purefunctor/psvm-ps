@@ -6,9 +6,9 @@
   "private": false,
   "scripts": {
     "build": "spago build -u '--codegen corefn'",
-    "build:zephyr": "yarn build && zephyr -f Main",
+    "build:zephyr": "pnpm build && zephyr -f Main",
     "bundle": "node build.js",
-    "prepack": "yarn build:zephyr && yarn bundle && rm -rf .spago"
+    "prepack": "pnpm build:zephyr && pnpm bundle && rm -rf .spago"
   },
   "bin": {
     "psvm": "dist/index.js"
