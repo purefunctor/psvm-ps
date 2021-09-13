@@ -1,6 +1,7 @@
 { name = "psvm-ps"
 , dependencies =
-  [ "argonaut-codecs"
+  [ "aff"
+  , "argonaut-codecs"
   , "argparse-basic"
   , "arrays"
   , "console"

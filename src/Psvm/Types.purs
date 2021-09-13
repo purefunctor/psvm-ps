@@ -4,9 +4,10 @@ import Prelude
 
 import Data.Either (Either(..))
 import Effect (Effect)
+import Effect.Aff (Aff)
 import Effect.Console as Console
 import Node.Process as Process
-import Run (EFFECT, Run, liftEffect, runBaseEffect)
+import Run (AFF, EFFECT, Run, liftEffect, runBaseAff', runBaseEffect)
 import Run.Except (EXCEPT, Except(..), liftExcept, runExcept)
 import Run.Reader (READER, runReader)
 import Type.Row (type (+))
@@ -38,6 +39,7 @@ type Env = {}
 type PSVM =
   ( READER Env
       + EXCEPT Failure
+      + AFF
       + EFFECT
       + ()
   )
@@ -46,5 +48,5 @@ type PSVM =
 type Psvm a = Run PSVM a
 
 -- | Run the `PSVM` effect stack.
-runPsvm :: forall a. Env -> Psvm a -> Effect a
-runPsvm e = runBaseEffect <<< runFailure <<< runReader e
+runPsvm :: forall a. Env -> Psvm a -> Aff a
+runPsvm e = runBaseAff' <<< runFailure <<< runReader e

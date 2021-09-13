@@ -9,6 +9,7 @@ import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe(..))
 import Data.Show.Generic (genericShow)
 import Effect (Effect)
+import Effect.Aff (launchAff_)
 import Node.Process as Process
 import Psvm.Files as Files
 import Psvm.Ls as Ls
@@ -56,7 +57,8 @@ commandParser =
 main :: String -> String -> String -> Effect Unit
 main name version about = do
   argv <- Array.drop 2 <$> Process.argv
-  runPsvm {} (perform argv)
+  launchAff_$
+    runPsvm {} (perform argv)
   where
   perform :: Array String -> Psvm Unit
   perform argv =
