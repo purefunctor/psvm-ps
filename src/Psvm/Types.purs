@@ -3,7 +3,8 @@ module Psvm.Types where
 import Prelude
 
 import Data.Either (Either(..), either)
-import Effect.Aff (Aff, attempt)
+import Effect (Effect)
+import Effect.Aff (Aff, attempt, launchAff_)
 import Effect.Class as EFfect
 import Effect.Class.Console as Console
 import Effect.Exception (Error, message)
@@ -46,8 +47,8 @@ type PSVM =
 type Psvm a = Run PSVM a
 
 -- | Run the `PSVM` effect stack.
-runPsvm :: forall a. Env -> Psvm a -> Aff a
-runPsvm e = runFailureBaseAff <<< runFailure <<< runReader e
+runPsvm :: forall a. Env -> Psvm a -> Effect Unit
+runPsvm e = launchAff_ <<< runFailureBaseAff <<< runFailure <<< runReader e
   where
   runFailureBaseAff m = do
     u <- runBaseAff' m
