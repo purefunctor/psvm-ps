@@ -2,23 +2,24 @@ module Psvm.Ls where
 
 import Prelude
 
-import Data.Argonaut.Decode (class DecodeJson, decodeJson, parseJson, (.:))
-import Data.Either (Either(..))
+import Data.Argonaut.Decode (class DecodeJson, decodeJson, parseJson, printJsonDecodeError, (.:))
+import Data.Bifunctor (lmap)
+import Data.Either (Either)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Options ((:=))
 import Data.Traversable (for_)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
-import Effect.Console as Console
+import Effect.Aff (Aff, error, makeAff, nonCanceler)
+import Effect.Class.Console as Console
+import Effect.Exception (Error)
 import Effect.Ref as Ref
 import Foreign.Object (fromFoldable)
 import Node.Encoding as Encoding
 import Node.HTTP.Client as Client
-import Node.Process as Process
 import Node.Stream (end, onDataString, onEnd)
 import Psvm.Files (askPsvmFolder, listPurs)
-import Psvm.Types (Psvm)
-import Run (liftEffect)
+import Psvm.Types (Psvm, exitError, liftCatchAff)
 
 releaseUrl :: String
 releaseUrl = "https://api.github.com/repos/purescript/purescript/releases"
@@ -40,51 +41,53 @@ instance decodeJsonRleaseJson :: DecodeJson ReleaseJson where
 
     pure $ ReleaseJson { tagName, assetsUrl }
 
-getReleases :: (Array ReleaseJson -> Effect Unit) -> Effect Unit
-getReleases cb = do
-  let
-    headers_ = Client.RequestHeaders $ fromFoldable
-      [ Tuple "User-Agent" "psvm-ps"
-      ]
+getReleases :: Psvm (Array ReleaseJson)
+getReleases = liftCatchAff affGo (exitError 1)
+  where
+  affGo :: Aff (Array ReleaseJson)
+  affGo = makeAff \n -> go n $> nonCanceler
 
-    options =
-      Client.headers := headers_
-        <> Client.hostname := "api.github.com"
-        <> Client.path := "/repos/purescript/purescript/releases"
-        <> Client.method := "GET"
-        <> Client.protocol := "https:"
-        <>
-          Client.port := 443
+  go :: (Either Error (Array ReleaseJson) -> Effect Unit) -> Effect Unit
+  go callback = do
+    let
+      headers_ = Client.RequestHeaders $ fromFoldable
+        [ Tuple "User-Agent" "psvm-ps"
+        ]
 
-  req <- Client.request options \response -> do
-    let stream = Client.responseAsStream response
+      options =
+        Client.headers := headers_
+          <> Client.hostname := "api.github.com"
+          <> Client.path := "/repos/purescript/purescript/releases"
+          <> Client.method := "GET"
+          <> Client.protocol := "https:"
+          <>
+            Client.port := 443
 
-    buffer <- Ref.new ""
+    req <- Client.request options \response -> do
+      let stream = Client.responseAsStream response
 
-    onDataString stream Encoding.UTF8 \chunk -> do
-      Ref.modify_ (_ <> chunk) buffer
+      buffer <- Ref.new ""
 
-    onEnd stream do
-      result <- Ref.read buffer
-      case parseJson result >>= decodeJson of
-        Left err ->
-          Console.errorShow err *> Process.exit 1
-        Right releases -> do
-          cb releases
+      onDataString stream Encoding.UTF8 \chunk -> do
+        Ref.modify_ (_ <> chunk) buffer
 
-  end (Client.requestAsStream req) (pure unit)
+      onEnd stream do
+        result <- Ref.read buffer
+        callback (lmap (error <<< printJsonDecodeError) $ parseJson result >>= decodeJson)
+
+    end (Client.requestAsStream req) (pure unit)
 
 printRemote :: Psvm Unit
 printRemote = do
-  liftEffect $ getReleases \versions -> do
-    Console.log "Available PureScript Versions:"
-    for_ versions \version ->
-      Console.log ("    " <> (unwrap version).tagName)
+  versions <- getReleases
+  Console.log "Available PureScript Versions:"
+  for_ versions \version -> do
+    Console.log ("    " <> (unwrap version).tagName)
 
 printLocal :: Psvm Unit
 printLocal = do
   psvm <- askPsvmFolder
-  listPurs psvm \versions -> do
-    Console.log "Available PureScript Versions:"
-    for_ versions \version ->
-      Console.log ("    " <> version)
+  versions <- listPurs psvm
+  Console.log "Available PureScript Versions:"
+  for_ versions \version ->
+    Console.log ("    " <> version)

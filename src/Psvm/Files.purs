@@ -2,19 +2,19 @@ module Psvm.Files where
 
 import Prelude
 
-import Data.Either (Either(..))
+import Control.Promise (Promise, toAffE)
 import Effect (Effect)
+import Effect.Aff (makeAff, nonCanceler)
+import Effect.Class.Console as Console
 import Effect.Console (log)
-import Effect.Console as Console
 import Node.FS.Async as FS
 import Node.Path (FilePath)
 import Node.Path as Path
-import Node.Process as Process
 import Psvm.Foreign.Download (downloadUrlTo, extractFromTo)
 import Psvm.Platform as Platform
-import Psvm.Types (Psvm)
+import Psvm.Types (Psvm, exitError, liftCatchAff)
 import Psvm.Version (Version)
-import Run (liftEffect)
+import Run (liftAff, liftEffect)
 
 type PsvmFolder =
   { archives :: FilePath
@@ -51,11 +51,11 @@ installPurs version = do
     dnl = Path.concat [ psvm.archives, vrs <> ".tar.gz" ]
     unp = Path.concat [ psvm.versions, vrs ]
 
-  liftEffect $ mkdirRecursive psvm.archives $
-    downloadUrlTo url dnl do
-      log $ "Downloaded: " <> vrs
-      extractFromTo dnl unp do
-        log $ "Installed: " <> unp
+  mkdirRecursive psvm.archives
+  liftEffect $ downloadUrlTo url dnl do
+    log $ "Downloaded: " <> vrs
+    extractFromTo dnl unp do
+      log $ "Installed: " <> unp
 
 selectPurs :: Version -> Psvm Unit
 selectPurs version = do
@@ -66,9 +66,10 @@ selectPurs version = do
     src = Path.concat [ psvm.versions, vrs, "purescript", "purs" ]
     to = Path.concat [ psvm.current, "bin", "purs" ]
 
-  liftEffect $ mkdirRecursive psvm.archives $
-    copyFile src to do
-      Console.log $ "Using PureScript: " <> vrs
+  mkdirRecursive psvm.archives
+  copyFile src to
+
+  Console.log $ "Using PureScript: " <> vrs
 
 removePurs :: Version -> Psvm Unit
 removePurs version = do
@@ -78,30 +79,34 @@ removePurs version = do
     vrs = show version
     target = Path.concat [ psvm.versions, vrs ]
 
-  liftEffect $ rmRecursive target do
-    Console.log $ "Uninstalled PureScript: " <> vrs
+  rmRecursive target
+  Console.log $ "Uninstalled PureScript: " <> vrs
 
 cleanPurs :: Psvm Unit
 cleanPurs = do
   psvm <- askPsvmFolder
+  rmRecursive psvm.archives
+  Console.log $ "Cleaned artifacts on: " <> psvm.archives
 
-  liftEffect $ rmRecursive psvm.archives do
-    Console.log $ "Cleaned artifacts on: " <> psvm.archives
+listPurs :: PsvmFolder -> Psvm (Array String)
+listPurs psvm = do
+  mkdirRecursive psvm.archives
+  readDir psvm.versions
+  where
+  readDir dir = liftAff $ makeAff \n -> FS.readdir dir n $> nonCanceler
 
-listPurs :: PsvmFolder -> (Array String -> Effect Unit) -> Psvm Unit
-listPurs psvm cb = do
-  liftEffect $ mkdirRecursive psvm.archives
-    $ FS.readdir psvm.versions
-    $
-      case _ of
-        Left err -> do
-          Console.error $ "Fatal error: " <> show err
-          Process.exit 1
-        Right files ->
-          cb files
 
-foreign import mkdirRecursive :: String -> Effect Unit -> Effect Unit
+foreign import copyFileP :: String -> String -> Effect (Promise Unit)
 
-foreign import copyFile :: String -> String -> Effect Unit -> Effect Unit
+copyFile :: FilePath -> FilePath -> Psvm Unit
+copyFile from to = liftCatchAff (toAffE (copyFileP from to)) (exitError 1)
 
-foreign import rmRecursive :: String -> Effect Unit -> Effect Unit
+foreign import rmRecursiveP :: String -> Effect (Promise Unit)
+
+rmRecursive :: FilePath -> Psvm Unit
+rmRecursive dir = liftCatchAff (toAffE (rmRecursiveP dir)) (exitError 1)
+
+foreign import mkdirRecursiveP :: String -> Effect (Promise Unit)
+
+mkdirRecursive :: FilePath -> Psvm Unit
+mkdirRecursive dir = liftCatchAff (toAffE (mkdirRecursiveP dir)) (exitError 1)
