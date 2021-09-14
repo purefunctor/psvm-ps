@@ -6,7 +6,6 @@ import Control.Promise (Promise, toAffE)
 import Effect (Effect)
 import Effect.Aff (makeAff, nonCanceler)
 import Effect.Class.Console as Console
-import Effect.Console (log)
 import Node.FS.Async as FS
 import Node.Path (FilePath)
 import Node.Path as Path
@@ -14,7 +13,7 @@ import Psvm.Foreign.Download (downloadUrlTo, extractFromTo)
 import Psvm.Platform as Platform
 import Psvm.Types (Psvm, exitError, liftCatchAff)
 import Psvm.Version (Version)
-import Run (liftAff, liftEffect)
+import Run (liftAff)
 
 type PsvmFolder =
   { archives :: FilePath
@@ -52,10 +51,12 @@ installPurs version = do
     unp = Path.concat [ psvm.versions, vrs ]
 
   mkdirRecursive psvm.archives
-  liftEffect $ downloadUrlTo url dnl do
-    log $ "Downloaded: " <> vrs
-    extractFromTo dnl unp do
-      log $ "Installed: " <> unp
+
+  downloadUrlTo url dnl
+  Console.log $ "Downloaded: " <> vrs
+
+  extractFromTo dnl unp
+  Console.log $ "Installed: " <> unp
 
 selectPurs :: Version -> Psvm Unit
 selectPurs version = do

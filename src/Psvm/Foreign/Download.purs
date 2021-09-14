@@ -1,16 +1,17 @@
 module Psvm.Foreign.Download where
 
 import Data.Unit (Unit)
+import Control.Promise (Promise, toAffE)
 import Effect (Effect)
+import Node.Path (FilePath)
+import Psvm.Types (Psvm, exitError, liftCatchAff)
 
-type Callback = Effect Unit
+foreign import downloadUrlToP :: String -> String -> Effect (Promise Unit)
 
-foreign import downloadUrlToImpl :: String -> String -> Callback -> Effect Unit
+downloadUrlTo :: FilePath -> FilePath -> Psvm Unit
+downloadUrlTo url to = liftCatchAff (toAffE (downloadUrlToP url to)) (exitError 1)
 
-downloadUrlTo :: String -> String -> Callback -> Effect Unit
-downloadUrlTo = downloadUrlToImpl
+foreign import extractFromToP :: String -> String -> Effect (Promise Unit)
 
-foreign import extractFromToImpl :: String -> String -> Callback -> Effect Unit
-
-extractFromTo :: String -> String -> Callback -> Effect Unit
-extractFromTo = extractFromToImpl
+extractFromTo :: FilePath -> FilePath -> Psvm Unit
+extractFromTo from to = liftCatchAff (toAffE (extractFromToP from to)) (exitError 1)
