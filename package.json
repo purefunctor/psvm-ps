@@ -3,6 +3,7 @@
   "version": "0.2.3",
   "description": "PureScript version management in PureScript.",
   "license": "BSD-3-Clause",
+  "homepage": "https://github.com/PureFunctor/psvm-ps#readme",
   "private": false,
   "scripts": {
     "bundle": "spago build && node bundle.js && node license.js"
@@ -25,5 +26,9 @@
     "decompress": "^4.2.1",
     "download": "^8.0.0",
     "fs-extra": "^11.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PureFunctor/psvm-ps"
   }
 }
