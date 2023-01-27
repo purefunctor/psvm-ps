@@ -22,3 +22,5 @@ psvm-ps
 ```sh
 $ npm install -g psvm-ps
 ```
+
+It's necessary to add `$HOME/.psvm/current/bin` to the `PATH`.
