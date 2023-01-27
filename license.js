@@ -6,7 +6,7 @@ const MultiStream = require("multistream");
 
 let output = fs.createWriteStream("./dist/LICENSE-purs", { flags: "w+" });
 let licenses = (() => {
-  let files = glob.sync(".spago/**/LICENSE")
+  let files = glob.sync(".spago/**/LICENSE");
   let tail = files.pop();
 
   let copyLicense = (newline) => (license) => {

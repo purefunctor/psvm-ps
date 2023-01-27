@@ -5,14 +5,14 @@
   "license": "BSD-3-Clause",
   "private": false,
   "scripts": {
-    "bundle": "spago bundle-module --platform=node -t psvm.js"
+    "bundle": "spago build && node bundle.js && node license.js"
   },
   "bin": {
     "psvm": "dist/index.js"
   },
   "files": [
     "dist/index.js",
-    "dist/psvm.js",
+    "dist/output/Main/index.js",
     "dist/LICENSE-purs"
   ],
   "devDependencies": {

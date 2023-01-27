@@ -1,8 +1,9 @@
-import esbuild from "esbuild";
+const esbuild = require("esbuild");
 
 esbuild
   .build({
-    entryPoints: ["index.js", "psvm.js"],
+    entryPoints: ["index.js"],
+    bundle: true,
     minify: true,
     outdir: "dist",
     platform: "node",
