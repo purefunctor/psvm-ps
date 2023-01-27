@@ -3,27 +3,32 @@
   "version": "0.2.3",
   "description": "PureScript version management in PureScript.",
   "license": "BSD-3-Clause",
+  "homepage": "https://github.com/PureFunctor/psvm-ps#readme",
   "private": false,
   "scripts": {
-    "bundle": "spago bundle-module -t psvm.js && node bundle.js && node license.js"
+    "bundle": "spago build && node bundle.js && node license.js"
   },
   "bin": {
     "psvm": "dist/index.js"
   },
   "files": [
     "dist/index.js",
-    "dist/psvm.js",
+    "dist/output/Main/index.js",
     "dist/LICENSE-purs"
   ],
   "devDependencies": {
-    "esbuild": "^0.12.26",
-    "glob": "^7.1.7",
+    "esbuild": "^0.17.4",
+    "glob": "^8.1.0",
     "multistream": "^4.1.0"
   },
   "dependencies": {
-    "cli-progress": "^3.9.0",
+    "cli-progress": "^3.11.2",
     "decompress": "^4.2.1",
     "download": "^8.0.0",
-    "fs-extra": "^10.0.0"
+    "fs-extra": "^11.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PureFunctor/psvm-ps"
   }
 }

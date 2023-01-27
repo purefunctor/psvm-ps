@@ -19,7 +19,6 @@
   , "node-streams"
   , "options"
   , "prelude"
-  , "psci-support"
   , "refs"
   , "run"
   , "string-parsers"

@@ -12,21 +12,21 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Setup Node
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v3
       with:
-        node-version: '14.x'
+        node-version: '18.x'
         registry-url: 'https://registry.npmjs.org'
 
     - name: Setup PureScript
       uses: purescript-contrib/setup-purescript@main
       with:
-        purescript: "0.14.4"
-        spago: "0.20.3"
+        purescript: "0.15.7"
+        spago: "0.20.9"
 
     - name: Install pnpm
-      uses: pnpm/action-setup@v2.0.1
+      uses: pnpm/action-setup@v2.2.4
       with:
-        version: 6.10.3
+        version: 7.26.1
 
     - name: Install Dependencies
       run: |
