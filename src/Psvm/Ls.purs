@@ -53,8 +53,7 @@ getReleases cb = do
         <> Client.path := "/repos/purescript/purescript/releases"
         <> Client.method := "GET"
         <> Client.protocol := "https:"
-        <>
-          Client.port := 443
+        <> Client.port := 443
 
   req <- Client.request options \response -> do
     let stream = Client.responseAsStream response
@@ -72,7 +71,7 @@ getReleases cb = do
         Right releases -> do
           cb releases
 
-  end (Client.requestAsStream req) (pure unit)
+  end (Client.requestAsStream req) (pure (pure unit))
 
 printRemote :: Psvm Unit
 printRemote = do

@@ -6,9 +6,9 @@ import Data.Array as Array
 import Data.Either (hush)
 import Data.Int as Int
 import Data.Maybe (Maybe)
-import Text.Parsing.StringParser (runParser)
-import Text.Parsing.StringParser.CodeUnits (char, regex)
-import Text.Parsing.StringParser.Combinators (optional)
+import StringParser (runParser)
+import StringParser.CodeUnits (char, regex)
+import StringParser.Combinators (optional)
 
 data Version = Version Int Int Int String
 

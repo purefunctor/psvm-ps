@@ -1,5 +1,4 @@
-const esbuild = require("esbuild");
-const path = require("path");
+import esbuild from "esbuild";
 
 esbuild
   .build({
@@ -7,8 +6,9 @@ esbuild
     minify: true,
     outdir: "dist",
     platform: "node",
+    external: ["fs", "path", "electron"],
     banner: {
-      "js": "#!/usr/bin/env node",
+      js: "#!/usr/bin/env node",
     },
   })
   .catch((_e) => process.exit(1));
